@@ -448,101 +448,75 @@
     }
 
     // Create a random Simon Says instruction
+    // Weighted pool: more "press" tasks, fewer "don't" tasks
     function createTask() {
-      const type = Math.floor(Math.random() * 7);
-      const says = Math.random() < 0.65;
+      const says = Math.random() < 0.75;
       const theme = getTheme();
 
-      // Press a color N times
-      if (type === 0) {
-        const index = randomColorIndex();
-        const count = Math.floor(Math.random() * 3) + 2;
-        const color = theme.colors[index].name;
+      const pool = [
+        // Press a color N times (weight 3)
+        ...Array(3).fill(() => {
+          const index = randomColorIndex();
+          const count = Math.floor(Math.random() * 3) + 2;
+          const color = theme.colors[index].name;
+          return {
+            says,
+            target: "color",
+            index,
+            count,
+            text: `${says ? "Simon says: " : ""}Press the ${color} button ${count} times!`
+          };
+        }),
+        // Press a color once (weight 3)
+        ...Array(3).fill(() => {
+          const index = randomColorIndex();
+          const color = theme.colors[index].name;
+          return {
+            says,
+            target: "color",
+            index,
+            count: 1,
+            text: `${says ? "Simon says: " : ""}Press the ${color} button!`
+          };
+        }),
+        // Don't press the car but press any button (weight 2)
+        ...Array(2).fill(() => {
+          return {
+            says,
+            target: "pressAnyColor",
+            text: `${says ? "Simon says: " : ""}Don't press the car, but press any color button!`
+          };
+        }),
+        // Don't press a specific color (weight 1)
+        () => {
+          const index = randomColorIndex();
+          const color = theme.colors[index].name;
+          return {
+            says,
+            target: "avoidColor",
+            index,
+            text: `${says ? "Simon says: " : ""}Don't press the ${color} button!`
+          };
+        },
+        // Don't press anything (weight 1)
+        () => {
+          return {
+            says,
+            target: "wait",
+            text: `${says ? "Simon says: " : ""}Don't press anything!`
+          };
+        }
+      ];
 
-        return {
-          says,
-          target: "color",
-          index,
-          count,
-          text: `${says ? "Simon says: " : ""}Press the ${color} button ${count} times!`
-        };
-      }
-
-      // Press a color once
-      if (type === 1) {
-        const index = randomColorIndex();
-        const color = theme.colors[index].name;
-
-        return {
-          says,
-          target: "color",
-          index,
-          count: 1,
-          text: `${says ? "Simon says: " : ""}Press the ${color} button!`
-        };
-      }
-
-      // Don't press the car
-      if (type === 2) {
-        return {
-          says,
-          target: "car",
-          text: `${says ? "Simon says: " : ""}Don't press the car!`
-        };
-      }
-
-      // Don't press a color
-      if (type === 3) {
-        const index = randomColorIndex();
-        const color = theme.colors[index].name;
-
-        return {
-          says,
-          target: "avoidColor",
-          index,
-          text: `${says ? "Simon says: " : ""}Don't press the ${color} button!`
-        };
-      }
-
-      // Don't press a shape
-      if (type === 4) {
-        const index = randomColorIndex();
-        const shapeName = theme.shapes[index];
-
-        return {
-          says,
-          target: "avoidShape",
-          index,
-          text: `${says ? "Simon says: " : ""}Don't press the ${shapeName}!`
-        };
-      }
-
-      // Don't press anything
-      if (type === 5) {
-        return {
-          says,
-          target: "wait",
-          text: `${says ? "Simon says: " : ""}Don't press anything!`
-        };
-      }
-
-      // Don't press the car AND don't press a specific color
-      const index = randomColorIndex();
-      const color = theme.colors[index].name;
-
-      return {
-        says,
-        target: "avoidMultiple",
-        avoidColorIndex: index,
-        text: `${says ? "Simon says: " : ""}Don't press the car or the ${color} button!`
-      };
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      return pick();
     }
 
     // Returns true if the correct action is to NOT press anything (just wait)
     function shouldWait() {
       // "Don't press" instructions always mean don't press, trick or not.
       // The trick only applies to "Press X" instructions.
-      return currentTask.target !== "color";
+      return currentTask.target !== "color" && currentTask.target !== "pressAnyColor";
     }
 
     // Stop the timer
@@ -651,7 +625,7 @@
 
       message.textContent = currentTask.text;
 
-      if (!currentTask.says && currentTask.target === "color") {
+      if (!currentTask.says && (currentTask.target === "color" || currentTask.target === "pressAnyColor")) {
         label.textContent = "⚠️ Trick instruction!";
       } else {
         label.textContent = `Level ${currentTheme + 1}`;
@@ -674,15 +648,21 @@
         // "Don't press" instruction — pressing is wrong (trick or not)
         if (currentTask.target === "avoidColor" && currentTask.index === index) {
           loseLife(`❌ You pressed the forbidden ${theme.colors[index].name} button!`);
-        } else if (currentTask.target === "avoidShape" && currentTask.index === index) {
-          loseLife(`❌ You pressed the forbidden ${theme.shapes[index]}!`);
-        } else if (currentTask.target === "avoidMultiple" && currentTask.avoidColorIndex === index) {
-          loseLife(`❌ You pressed the forbidden ${theme.colors[index].name} button!`);
         } else if (currentTask.target === "wait") {
           loseLife("❌ You pressed something! You should have waited!");
         } else {
           loseLife("❌ Wrong action! You should have waited!");
         }
+        return;
+      }
+
+      // pressAnyColor: any color button is correct, just not the car
+      if (currentTask.target === "pressAnyColor") {
+        if (!currentTask.says) {
+          loseLife("❌ Simon didn't say it!");
+          return;
+        }
+        completeRound();
         return;
       }
 
@@ -714,17 +694,21 @@
 
       if (shouldWait()) {
         // "Don't press" instruction — pressing is wrong (trick or not)
-        if (currentTask.target === "car") {
-          loseLife("🚗 You pressed the car! You should have waited!");
-        } else if (currentTask.target === "avoidMultiple") {
-          loseLife("🚗 You pressed the car! You should have waited!");
-        } else {
-          loseLife("❌ Wrong action! You should have waited!");
-        }
+        loseLife("❌ Wrong action! You should have waited!");
         return;
       }
 
-      // The correct action was to press something
+      // pressAnyColor: pressing the car is wrong
+      if (currentTask.target === "pressAnyColor") {
+        if (!currentTask.says) {
+          loseLife("❌ Simon didn't say it!");
+          return;
+        }
+        loseLife("🚗 Don't press the car! Press a color button!");
+        return;
+      }
+
+      // The correct action was to press a specific color
       if (!currentTask.says) {
         loseLife("❌ Simon didn't say it!");
         return;
