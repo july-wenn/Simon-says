@@ -1,0 +1,823 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simon Says Challenge</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #101321;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .game {
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #a5acc7;
+      margin-bottom: 24px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      flex: 1;
+      padding: 12px 6px;
+      border-radius: 12px;
+      background: #20253b;
+    }
+
+    .stat p {
+      color: #a5acc7;
+      font-size: 11px;
+      margin: 0 0 8px;
+    }
+
+    .stat h2 {
+      margin: 0;
+      font-size: 23px;
+    }
+
+    .lives {
+      margin-bottom: 18px;
+      font-size: 1.8rem;
+      letter-spacing: 6px;
+    }
+
+    .lives .heart {
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .lives .heart.lost {
+      opacity: 0.2;
+      transform: scale(0.7);
+    }
+
+    .instruction {
+      min-height: 120px;
+      padding: 20px 12px;
+      margin-bottom: 18px;
+      border: 2px solid #454d70;
+      border-radius: 18px;
+      background: #20253b;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .instruction small {
+      color: #a5acc7;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #message {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      font-weight: bold;
+    }
+
+    .timer-container {
+      height: 12px;
+      background: #303650;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    #timerBar {
+      width: 100%;
+      height: 100%;
+      background: #22c55e;
+      transition: width 0.1s linear, background 0.2s;
+    }
+
+    #timerText {
+      margin-bottom: 18px;
+      color: #c4c9e0;
+      font-weight: bold;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      justify-items: center;
+      margin-bottom: 18px;
+    }
+
+    .color {
+      width: 100%;
+      max-width: 180px;
+      height: 120px;
+      border: 3px solid #ffffff35;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition:
+        border-radius 0.3s,
+        clip-path 0.3s,
+        background 0.3s,
+        transform 0.15s,
+        filter 0.15s;
+    }
+
+    .color:hover:not(:disabled) {
+      filter: brightness(1.2);
+      transform: scale(1.04);
+    }
+
+    .color:active:not(:disabled) {
+      transform: scale(0.94);
+    }
+
+    .color:disabled,
+    .car:disabled,
+    .main-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    /* Different shapes */
+
+    .square {
+      border-radius: 12px;
+      clip-path: none;
+    }
+
+    .circle {
+      border-radius: 50%;
+      clip-path: none;
+    }
+
+    .pill {
+      border-radius: 60px;
+      clip-path: none;
+    }
+
+    .diamond {
+      border-radius: 0;
+      clip-path: polygon(
+        50% 0%, 100% 50%,
+        50% 100%, 0% 50%
+      );
+    }
+
+    .hexagon {
+      border-radius: 0;
+      clip-path: polygon(
+        25% 0%, 75% 0%,
+        100% 50%, 75% 100%,
+        25% 100%, 0% 50%
+      );
+    }
+
+    .car {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 14px;
+      border: 2px solid #454d70;
+      border-radius: 16px;
+      background: #252b43;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .car span {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+
+    .main-btn {
+      width: 100%;
+      padding: 15px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 12px;
+      background: #8b5cf6;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .main-btn:hover:not(:disabled) {
+      background: #7c3aed;
+    }
+
+    .hint {
+      color: #858eaf;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 360px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .color {
+        height: 105px;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+  <meta property="og:image" content="https://bolt.new/static/og_default.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
+</head>
+
+<body>
+  <main class="game">
+    <h1>🎮 Simon Says</h1>
+    <p class="subtitle">
+      Follow the rules. Avoid the tricks!
+    </p>
+
+    <section class="stats">
+      <div class="stat">
+        <p>ROUND</p>
+        <h2 id="round">0</h2>
+      </div>
+
+      <div class="stat">
+        <p>SCORE</p>
+        <h2 id="score">0</h2>
+      </div>
+
+      <div class="stat">
+        <p>BEST</p>
+        <h2 id="best">0</h2>
+      </div>
+    </section>
+
+    <div class="lives" id="lives">
+      <span class="heart">❤️</span>
+      <span class="heart">❤️</span>
+      <span class="heart">❤️</span>
+    </div>
+
+    <section class="instruction">
+      <small id="label">Your challenge</small>
+      <div id="message">
+        Press Start Game to begin!
+      </div>
+    </section>
+
+    <div class="timer-container">
+      <div id="timerBar"></div>
+    </div>
+
+    <p id="timerText">Time: 5 seconds</p>
+
+    <section class="board">
+      <button class="color square" data-index="0" disabled>
+        GREEN
+      </button>
+
+      <button class="color square" data-index="1" disabled>
+        RED
+      </button>
+
+      <button class="color square" data-index="2" disabled>
+        YELLOW
+      </button>
+
+      <button class="color square" data-index="3" disabled>
+        BLUE
+      </button>
+    </section>
+
+    <button class="car" id="car" disabled>
+      <span>🚗</span>
+      Car
+    </button>
+
+    <button class="main-btn" id="start">
+      Start Game
+    </button>
+
+    <p class="hint">
+      You have 5 seconds for each challenge.
+      Don't press the forbidden thing — just wait!
+      You have 3 lives. Every 5 correct answers, the colors and shapes change!
+    </p>
+  </main>
+
+  <script>
+    // HTML elements
+    const message = document.getElementById("message");
+    const label = document.getElementById("label");
+    const roundDisplay = document.getElementById("round");
+    const scoreDisplay = document.getElementById("score");
+    const bestDisplay = document.getElementById("best");
+    const livesDisplay = document.getElementById("lives");
+    const timerBar = document.getElementById("timerBar");
+    const timerText = document.getElementById("timerText");
+
+    const colorButtons = document.querySelectorAll(".color");
+    const carButton = document.getElementById("car");
+    const startButton = document.getElementById("start");
+
+    // Game settings
+    const TIME_LIMIT = 5;
+    const MAX_LIVES = 3;
+
+    let round = 0;
+    let score = 0;
+    let best =
+      Number(localStorage.getItem("simonChallengeBest")) || 0;
+
+    let lives = MAX_LIVES;
+    let currentTask = null;
+    let acceptingInput = false;
+    let finished = true;
+    let clickCount = 0;
+
+    let timerInterval = null;
+    let timeLeft = TIME_LIMIT;
+    let gameId = 0;
+
+    bestDisplay.textContent = best;
+
+    // Color and shape themes.
+    // A new theme is selected every 5 correct answers.
+
+    const themes = [
+      {
+        colors: [
+          { name: "green", hex: "#16a34a" },
+          { name: "red", hex: "#dc2626" },
+          { name: "yellow", hex: "#eab308" },
+          { name: "blue", hex: "#2563eb" }
+        ],
+        shapes: ["square", "square", "square", "square"]
+      },
+
+      {
+        colors: [
+          { name: "purple", hex: "#9333ea" },
+          { name: "orange", hex: "#ea580c" },
+          { name: "cyan", hex: "#0891b2" },
+          { name: "pink", hex: "#db2777" }
+        ],
+        shapes: ["circle", "circle", "circle", "circle"]
+      },
+
+      {
+        colors: [
+          { name: "lime", hex: "#65a30d" },
+          { name: "coral", hex: "#f05252" },
+          { name: "violet", hex: "#7c3aed" },
+          { name: "gold", hex: "#ca8a04" }
+        ],
+        shapes: ["diamond", "diamond", "diamond", "diamond"]
+      },
+
+      {
+        colors: [
+          { name: "teal", hex: "#0d9488" },
+          { name: "magenta", hex: "#c026d3" },
+          { name: "indigo", hex: "#4f46e5" },
+          { name: "salmon", hex: "#f97373" }
+        ],
+        shapes: ["hexagon", "pill", "hexagon", "pill"]
+      }
+    ];
+
+    let currentTheme = 0;
+
+    // Get the current theme
+    function getTheme() {
+      return themes[currentTheme % themes.length];
+    }
+
+    // Change button colors and shapes
+    function updateTheme() {
+      const theme = getTheme();
+
+      colorButtons.forEach((button, index) => {
+        const color = theme.colors[index];
+
+        button.style.backgroundColor = color.hex;
+        button.textContent = color.name.toUpperCase();
+
+        button.classList.remove(
+          "square", "circle", "pill", "diamond", "hexagon"
+        );
+
+        button.classList.add(theme.shapes[index]);
+      });
+
+      label.textContent =
+        `Level ${currentTheme + 1} — Round ${round}`;
+    }
+
+    function randomColorIndex() {
+      return Math.floor(Math.random() * 4);
+    }
+
+    // Create a random Simon Says instruction
+    function createTask() {
+      const type = Math.floor(Math.random() * 7);
+      const says = Math.random() < 0.65;
+      const theme = getTheme();
+
+      // Press a color N times
+      if (type === 0) {
+        const index = randomColorIndex();
+        const count = Math.floor(Math.random() * 3) + 2;
+        const color = theme.colors[index].name;
+
+        return {
+          says,
+          target: "color",
+          index,
+          count,
+          text: `${says ? "Simon says: " : ""}Press the ${color} button ${count} times!`
+        };
+      }
+
+      // Press a color once
+      if (type === 1) {
+        const index = randomColorIndex();
+        const color = theme.colors[index].name;
+
+        return {
+          says,
+          target: "color",
+          index,
+          count: 1,
+          text: `${says ? "Simon says: " : ""}Press the ${color} button!`
+        };
+      }
+
+      // Don't press the car
+      if (type === 2) {
+        return {
+          says,
+          target: "car",
+          text: `${says ? "Simon says: " : ""}Don't press the car!`
+        };
+      }
+
+      // Don't press a color
+      if (type === 3) {
+        const index = randomColorIndex();
+        const color = theme.colors[index].name;
+
+        return {
+          says,
+          target: "avoidColor",
+          index,
+          text: `${says ? "Simon says: " : ""}Don't press the ${color} button!`
+        };
+      }
+
+      // Don't press a shape
+      if (type === 4) {
+        const index = randomColorIndex();
+        const shapeName = theme.shapes[index];
+
+        return {
+          says,
+          target: "avoidShape",
+          index,
+          text: `${says ? "Simon says: " : ""}Don't press the ${shapeName}!`
+        };
+      }
+
+      // Don't press anything
+      if (type === 5) {
+        return {
+          says,
+          target: "wait",
+          text: `${says ? "Simon says: " : ""}Don't press anything!`
+        };
+      }
+
+      // Don't press the car AND don't press a specific color
+      const index = randomColorIndex();
+      const color = theme.colors[index].name;
+
+      return {
+        says,
+        target: "avoidMultiple",
+        avoidColorIndex: index,
+        text: `${says ? "Simon says: " : ""}Don't press the car or the ${color} button!`
+      };
+    }
+
+    // Returns true if the correct action is to NOT press anything (just wait)
+    function shouldWait() {
+      // "Don't press" instructions always mean don't press, trick or not.
+      // The trick only applies to "Press X" instructions.
+      return currentTask.target !== "color";
+    }
+
+    // Stop the timer
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    // Start a fresh 5-second timer
+    function startTimer(id) {
+      stopTimer();
+
+      const startedAt = Date.now();
+      timeLeft = TIME_LIMIT;
+
+      timerBar.style.width = "100%";
+      timerBar.style.backgroundColor = "#22c55e";
+      timerText.textContent = "Time: 5 seconds";
+
+      timerInterval = setInterval(() => {
+        if (id !== gameId || !acceptingInput) {
+          stopTimer();
+          return;
+        }
+
+        const elapsed = (Date.now() - startedAt) / 1000;
+        timeLeft = Math.max(0, TIME_LIMIT - elapsed);
+
+        timerBar.style.width =
+          `${(timeLeft / TIME_LIMIT) * 100}%`;
+
+        timerText.textContent =
+          `Time: ${timeLeft.toFixed(1)} seconds`;
+
+        if (timeLeft <= 2) {
+          timerBar.style.backgroundColor = "#ef4444";
+        }
+
+        if (timeLeft <= 0) {
+          stopTimer();
+
+          if (shouldWait()) {
+            // The correct action was to wait → success!
+            completeRound();
+          } else {
+            // The correct action was to press something → lose a life
+            loseLife("⏰ Time's up! You should have pressed something!");
+          }
+        }
+      }, 50);
+    }
+
+    // Update the hearts display
+    function updateLivesDisplay() {
+      const hearts = livesDisplay.querySelectorAll(".heart");
+      hearts.forEach((heart, i) => {
+        if (i < lives) {
+          heart.classList.remove("lost");
+        } else {
+          heart.classList.add("lost");
+        }
+      });
+    }
+
+    // Start or restart the game
+    function startGame() {
+      gameId++;
+      stopTimer();
+
+      round = 0;
+      score = 0;
+      lives = MAX_LIVES;
+      currentTheme = 0;
+      clickCount = 0;
+      finished = false;
+      acceptingInput = false;
+
+      roundDisplay.textContent = round;
+      scoreDisplay.textContent = score;
+      updateLivesDisplay();
+
+      startButton.textContent = "Restart Game";
+
+      updateTheme();
+      nextRound();
+    }
+
+    // Start the next challenge
+    function nextRound() {
+      if (finished) return;
+
+      stopTimer();
+
+      round++;
+      clickCount = 0;
+
+      roundDisplay.textContent = round;
+
+      // Change theme after every 5 correct answers
+      currentTheme = Math.floor(score / 5) % themes.length;
+
+      updateTheme();
+
+      currentTask = createTask();
+      acceptingInput = true;
+
+      message.textContent = currentTask.text;
+
+      if (!currentTask.says && currentTask.target === "color") {
+        label.textContent = "⚠️ Trick instruction!";
+      } else {
+        label.textContent = `Level ${currentTheme + 1}`;
+      }
+
+      colorButtons.forEach(button => button.disabled = false);
+      carButton.disabled = false;
+
+      startTimer(gameId);
+    }
+
+    // Handle color button clicks
+    function handleColorClick(index) {
+      if (!acceptingInput || finished) return;
+
+      const theme = getTheme();
+
+      // If the correct action was to wait, any press is wrong
+      if (shouldWait()) {
+        // "Don't press" instruction — pressing is wrong (trick or not)
+        if (currentTask.target === "avoidColor" && currentTask.index === index) {
+          loseLife(`❌ You pressed the forbidden ${theme.colors[index].name} button!`);
+        } else if (currentTask.target === "avoidShape" && currentTask.index === index) {
+          loseLife(`❌ You pressed the forbidden ${theme.shapes[index]}!`);
+        } else if (currentTask.target === "avoidMultiple" && currentTask.avoidColorIndex === index) {
+          loseLife(`❌ You pressed the forbidden ${theme.colors[index].name} button!`);
+        } else if (currentTask.target === "wait") {
+          loseLife("❌ You pressed something! You should have waited!");
+        } else {
+          loseLife("❌ Wrong action! You should have waited!");
+        }
+        return;
+      }
+
+      // The correct action was to press — check if it's right
+      if (!currentTask.says) {
+        // Trick "press" instruction — pressing is wrong (you followed the trick)
+        loseLife("❌ Simon didn't say it!");
+        return;
+      }
+      if (currentTask.index !== index) {
+        loseLife("❌ Wrong color!");
+        return;
+      }
+
+      clickCount++;
+
+      message.textContent =
+        `${theme.colors[index].name.toUpperCase()}! ` +
+        `${clickCount} / ${currentTask.count}`;
+
+      if (clickCount === currentTask.count) {
+        completeRound();
+      }
+    }
+
+    // Handle car clicks
+    function handleCarClick() {
+      if (!acceptingInput || finished) return;
+
+      if (shouldWait()) {
+        // "Don't press" instruction — pressing is wrong (trick or not)
+        if (currentTask.target === "car") {
+          loseLife("🚗 You pressed the car! You should have waited!");
+        } else if (currentTask.target === "avoidMultiple") {
+          loseLife("🚗 You pressed the car! You should have waited!");
+        } else {
+          loseLife("❌ Wrong action! You should have waited!");
+        }
+        return;
+      }
+
+      // The correct action was to press something
+      if (!currentTask.says) {
+        loseLife("❌ Simon didn't say it!");
+        return;
+      }
+    }
+
+    // Lose a life; if no lives remain, game over
+    function loseLife(text) {
+      if (!acceptingInput || finished) return;
+
+      acceptingInput = false;
+      stopTimer();
+
+      lives--;
+      updateLivesDisplay();
+
+      colorButtons.forEach(button => button.disabled = true);
+      carButton.disabled = true;
+
+      if (lives <= 0) {
+        endGame(text);
+        return;
+      }
+
+      message.textContent = `${text} ${lives} ${lives === 1 ? "life" : "lives"} left!`;
+
+      const thisGame = gameId;
+
+      setTimeout(() => {
+        if (thisGame === gameId && !finished) {
+          nextRound();
+        }
+      }, 1500);
+    }
+
+    // Correct answer
+    function completeRound() {
+      if (!acceptingInput || finished) return;
+
+      acceptingInput = false;
+      stopTimer();
+
+      score++;
+      scoreDisplay.textContent = score;
+
+      if (score > best) {
+        best = score;
+        bestDisplay.textContent = best;
+
+        localStorage.setItem("simonChallengeBest", best);
+      }
+
+      colorButtons.forEach(button => button.disabled = true);
+      carButton.disabled = true;
+
+      if (score % 5 === 0) {
+        message.textContent =
+          "🎉 Level completed! New colors and shapes incoming!";
+      } else {
+        message.textContent =
+          "✅ Correct! Get ready for the next challenge.";
+      }
+
+      const thisGame = gameId;
+
+      setTimeout(() => {
+        if (thisGame === gameId && !finished) {
+          nextRound();
+        }
+      }, 1200);
+    }
+
+    // Game over
+    function endGame(text) {
+      finished = true;
+
+      message.textContent = text;
+      label.textContent = "Game over";
+      timerText.textContent = "Game over!";
+      timerBar.style.width = "0%";
+
+      startButton.textContent = "Play Again";
+    }
+
+    // Connect the buttons
+    colorButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        handleColorClick(Number(button.dataset.index));
+      });
+    });
+
+    carButton.addEventListener("click", handleCarClick);
+    startButton.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
