@@ -352,11 +352,11 @@
     // Game settings
     const TIME_LIMIT = 5;
     const MAX_LIVES = 3;
+    const SAVE_KEY = "simonGameState";
 
     let round = 0;
     let score = 0;
-    let best =
-      Number(localStorage.getItem("simonChallengeBest")) || 0;
+    let best = 0;
 
     let lives = MAX_LIVES;
     let currentTask = null;
@@ -368,7 +368,48 @@
     let timeLeft = TIME_LIMIT;
     let gameId = 0;
 
-    bestDisplay.textContent = best;
+    // Persist the full game state to localStorage so it survives refresh
+    function saveState() {
+      const state = {
+        round,
+        score,
+        best,
+        lives,
+        currentTheme,
+        finished
+      };
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      } catch (e) {
+        // localStorage may be unavailable (private mode, etc.)
+      }
+    }
+
+    // Restore game state from localStorage on page load
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) {
+          // Fall back to the old best-only key for backward compat
+          best = Number(localStorage.getItem("simonChallengeBest")) || 0;
+          bestDisplay.textContent = best;
+          return;
+        }
+        const saved = JSON.parse(raw);
+        round = saved.round || 0;
+        score = saved.score || 0;
+        best = saved.best || 0;
+        lives = saved.lives != null ? saved.lives : MAX_LIVES;
+        currentTheme = saved.currentTheme || 0;
+        finished = saved.finished !== false; // default to finished=true
+      } catch (e) {
+        best = Number(localStorage.getItem("simonChallengeBest")) || 0;
+      }
+
+      bestDisplay.textContent = best;
+    }
+
+    loadState();
 
     // Color and shape themes.
     // A new theme is selected every 5 correct answers.
@@ -601,6 +642,7 @@
       startButton.textContent = "Restart Game";
 
       updateTheme();
+      saveState();
       nextRound();
     }
 
@@ -634,6 +676,7 @@
       colorButtons.forEach(button => button.disabled = false);
       carButton.disabled = false;
 
+      saveState();
       startTimer(gameId);
     }
 
@@ -734,6 +777,7 @@
       }
 
       message.textContent = `${text} ${lives} ${lives === 1 ? "life" : "lives"} left!`;
+      saveState();
 
       const thisGame = gameId;
 
@@ -757,9 +801,9 @@
       if (score > best) {
         best = score;
         bestDisplay.textContent = best;
-
-        localStorage.setItem("simonChallengeBest", best);
       }
+
+      saveState();
 
       colorButtons.forEach(button => button.disabled = true);
       carButton.disabled = true;
@@ -791,6 +835,7 @@
       timerBar.style.width = "0%";
 
       startButton.textContent = "Play Again";
+      saveState();
     }
 
     // Connect the buttons
@@ -802,6 +847,25 @@
 
     carButton.addEventListener("click", handleCarClick);
     startButton.addEventListener("click", startGame);
+
+    // Restore an in-progress game on page load
+    if (!finished && lives > 0) {
+      roundDisplay.textContent = round;
+      scoreDisplay.textContent = score;
+      updateLivesDisplay();
+      startButton.textContent = "Restart Game";
+      updateTheme();
+      nextRound();
+    } else if (finished && round > 0) {
+      // Game was over — show the final state
+      roundDisplay.textContent = round;
+      scoreDisplay.textContent = score;
+      updateLivesDisplay();
+      startButton.textContent = "Play Again";
+      updateTheme();
+      message.textContent = "Press Play Again to start a new game!";
+      label.textContent = "Game over";
+    }
   </script>
 </body>
 </html>
