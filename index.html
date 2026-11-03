@@ -329,6 +329,88 @@
       margin-top: 18px;
     }
 
+    .game-over-panel {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 28px 20px;
+      margin-top: 18px;
+      border: 2px solid var(--instruction-border);
+      border-radius: 20px;
+      background: var(--instruction-bg);
+      animation: gameOverIn 0.4s ease;
+    }
+
+    .game-over-panel.visible {
+      display: flex;
+    }
+
+    @keyframes gameOverIn {
+      from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    .game-over-title {
+      font-size: 3rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin: 0;
+      color: #ef4444;
+      text-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+    }
+
+    .game-over-subtitle {
+      color: var(--instruction-label);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .review-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: var(--stat-bg);
+      transition: background 0.3s;
+    }
+
+    .review-row span {
+      color: var(--instruction-label);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: bold;
+    }
+
+    .review-row strong {
+      font-size: 1.6rem;
+      color: var(--text);
+    }
+
+    .new-best-badge {
+      display: none;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: #22c55e;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      animation: pulse 1s infinite;
+    }
+
+    .new-best-badge.visible {
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.08); }
+    }
+
     @media (max-width: 360px) {
       h1 {
         font-size: 2rem;
@@ -419,6 +501,25 @@
       Start Game
     </button>
 
+    <div class="game-over-panel" id="gameOverPanel">
+      <h2 class="game-over-title">GAME OVER</h2>
+      <p class="game-over-subtitle" id="gameOverReason">Better luck next time!</p>
+      <div class="review-row">
+        <span>Round</span>
+        <strong id="reviewRound">0</strong>
+      </div>
+      <div class="review-row">
+        <span>Score</span>
+        <strong id="reviewScore">0</strong>
+      </div>
+      <div class="review-row">
+        <span>Best
+          <span class="new-best-badge" id="newBestBadge">NEW!</span>
+        </span>
+        <strong id="reviewBest">0</strong>
+      </div>
+    </div>
+
     <p class="hint">
       You have 5 seconds for each challenge.
       Don't press the forbidden thing — just wait!
@@ -466,6 +567,29 @@
     const colorButtons = document.querySelectorAll(".color");
     const carButton = document.getElementById("car");
     const startButton = document.getElementById("start");
+    const gameOverPanel = document.getElementById("gameOverPanel");
+    const gameOverReason = document.getElementById("gameOverReason");
+    const reviewRound = document.getElementById("reviewRound");
+    const reviewScore = document.getElementById("reviewScore");
+    const reviewBest = document.getElementById("reviewBest");
+    const newBestBadge = document.getElementById("newBestBadge");
+
+    let isNewBest = false;
+
+    function hideGameOverPanel() {
+      gameOverPanel.classList.remove("visible");
+      newBestBadge.classList.remove("visible");
+    }
+
+    function showGameOverPanel() {
+      reviewRound.textContent = round;
+      reviewScore.textContent = score;
+      reviewBest.textContent = best;
+      if (isNewBest) {
+        newBestBadge.classList.add("visible");
+      }
+      gameOverPanel.classList.add("visible");
+    }
 
     // Game settings
     const TIME_LIMIT = 5;
@@ -759,6 +883,9 @@
 
       startButton.textContent = "Restart Game";
 
+      isNewBest = false;
+      hideGameOverPanel();
+
       updateTheme();
       saveState();
       nextRound();
@@ -876,6 +1003,8 @@
       }
     }
 
+    // Keep color buttons filled on restore
+
     // Lose a life; if no lives remain, game over
     function loseLife(text) {
       if (!acceptingInput || finished) return;
@@ -919,6 +1048,7 @@
       if (score > best) {
         best = score;
         bestDisplay.textContent = best;
+        isNewBest = true;
       }
 
       saveState();
@@ -953,6 +1083,8 @@
       timerBar.style.width = "0%";
 
       startButton.textContent = "Play Again";
+      gameOverReason.textContent = text;
+      showGameOverPanel();
       saveState();
     }
 
