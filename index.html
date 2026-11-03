@@ -599,7 +599,7 @@
     <p class="hint">
       You have 5 seconds for each challenge.
       Don't press the forbidden thing — just wait!
-      You have 3 lives. Every 5 correct answers, the colors and shapes change!
+      You have 3 lives. Every 5 correct answers, the colors, shapes, and the special button change!
     </p>
   </main>
 
@@ -819,7 +819,8 @@
           { name: "yellow", hex: "#eab308" },
           { name: "blue", hex: "#2563eb" }
         ],
-        shapes: ["square", "square", "square", "square"]
+        shapes: ["square", "square", "square", "square"],
+        special: { name: "car", emoji: "🚗" }
       },
 
       {
@@ -829,7 +830,8 @@
           { name: "cyan", hex: "#0891b2" },
           { name: "pink", hex: "#db2777" }
         ],
-        shapes: ["circle", "circle", "circle", "circle"]
+        shapes: ["circle", "circle", "circle", "circle"],
+        special: { name: "plane", emoji: "✈️" }
       },
 
       {
@@ -839,7 +841,8 @@
           { name: "violet", hex: "#7c3aed" },
           { name: "gold", hex: "#ca8a04" }
         ],
-        shapes: ["diamond", "diamond", "diamond", "diamond"]
+        shapes: ["diamond", "diamond", "diamond", "diamond"],
+        special: { name: "rocket", emoji: "🚀" }
       },
 
       {
@@ -849,7 +852,8 @@
           { name: "indigo", hex: "#4f46e5" },
           { name: "salmon", hex: "#f97373" }
         ],
-        shapes: ["hexagon", "pill", "hexagon", "pill"]
+        shapes: ["hexagon", "pill", "hexagon", "pill"],
+        special: { name: "train", emoji: "🚂" }
       }
     ];
 
@@ -860,7 +864,7 @@
       return themes[currentTheme % themes.length];
     }
 
-    // Change button colors and shapes
+    // Change button colors, shapes, and the special button
     function updateTheme() {
       const theme = getTheme();
 
@@ -877,8 +881,16 @@
         button.classList.add(theme.shapes[index]);
       });
 
+      const special = theme.special;
+      carButton.innerHTML = `<span>${special.emoji}</span> ${special.name.charAt(0).toUpperCase() + special.name.slice(1)}`;
+
       label.textContent =
         `Level ${currentTheme + 1} — Round ${round}`;
+    }
+
+    // Get the current special button name
+    function specialName() {
+      return getTheme().special.name;
     }
 
     function randomColorIndex() {
@@ -890,6 +902,8 @@
     function createTask() {
       const says = Math.random() < 0.75;
       const theme = getTheme();
+
+      const special = theme.special.name;
 
       const pool = [
         // Press a color N times (weight 3)
@@ -905,8 +919,8 @@
             text: `${says ? "Simon says: " : ""}Press the ${color} button ${count} times!`
           };
         }),
-        // Press a color once (weight 3)
-        ...Array(3).fill(() => {
+        // Press a color once (weight 2)
+        ...Array(2).fill(() => {
           const index = randomColorIndex();
           const color = theme.colors[index].name;
           return {
@@ -917,12 +931,31 @@
             text: `${says ? "Simon says: " : ""}Press the ${color} button!`
           };
         }),
-        // Don't press the car but press any button (weight 2)
+        // Press the special button once (weight 2)
+        ...Array(2).fill(() => {
+          return {
+            says,
+            target: "special",
+            count: 1,
+            text: `${says ? "Simon says: " : ""}Press the ${special}!`
+          };
+        }),
+        // Press the special button N times (weight 1)
+        () => {
+          const count = Math.floor(Math.random() * 2) + 2;
+          return {
+            says,
+            target: "special",
+            count,
+            text: `${says ? "Simon says: " : ""}Press the ${special} ${count} times!`
+          };
+        },
+        // Don't press the special but press any color button (weight 2)
         ...Array(2).fill(() => {
           return {
             says,
             target: "pressAnyColor",
-            text: `${says ? "Simon says: " : ""}Don't press the car, but press any color button!`
+            text: `${says ? "Simon says: " : ""}Don't press the ${special}, but press any color button!`
           };
         }),
         // Don't press a specific color (weight 1)
@@ -955,7 +988,9 @@
       // Trick "press" instructions (Simon didn't say it) → don't press
       if (!currentTask.says) return true;
       // "Don't press" instructions always mean don't press
-      return currentTask.target !== "color" && currentTask.target !== "pressAnyColor";
+      return currentTask.target !== "color" &&
+             currentTask.target !== "pressAnyColor" &&
+             currentTask.target !== "special";
     }
 
     // Stop the timer
@@ -1071,7 +1106,7 @@
 
       message.textContent = currentTask.text;
 
-      if (!currentTask.says && (currentTask.target === "color" || currentTask.target === "pressAnyColor")) {
+      if (!currentTask.says && (currentTask.target === "color" || currentTask.target === "pressAnyColor" || currentTask.target === "special")) {
         label.textContent = "⚠️ Trick instruction!";
       } else {
         label.textContent = `Level ${currentTheme + 1}`;
@@ -1113,6 +1148,16 @@
         return;
       }
 
+      // If the task is to press the special button, pressing a color is wrong
+      if (currentTask.target === "special") {
+        if (!currentTask.says) {
+          loseLife("❌ Simon didn't say it!");
+          return;
+        }
+        loseLife(`❌ Wrong button! Press the ${specialName()}!`);
+        return;
+      }
+
       // The correct action was to press — check if it's right
       if (!currentTask.says) {
         // Trick "press" instruction — pressing is wrong (you followed the trick)
@@ -1135,30 +1180,56 @@
       }
     }
 
-    // Handle car clicks
+    // Handle special-button (car/plane/rocket/train) clicks
     function handleCarClick() {
       if (!acceptingInput || finished) return;
 
+      const name = specialName();
+
+      // If the correct action was to wait, any press is wrong
       if (shouldWait()) {
-        // "Don't press" instruction — pressing is wrong (trick or not)
-        loseLife("❌ Wrong action! You should have waited!");
+        if (currentTask.target === "wait") {
+          loseLife("❌ You pressed something! You should have waited!");
+        } else {
+          loseLife(`❌ Wrong action! You should have waited!`);
+        }
         return;
       }
 
-      // pressAnyColor: pressing the car is wrong
+      // pressAnyColor: pressing the special button is wrong — must press a color
       if (currentTask.target === "pressAnyColor") {
         if (!currentTask.says) {
           loseLife("❌ Simon didn't say it!");
           return;
         }
-        loseLife("🚗 Don't press the car! Press a color button!");
+        loseLife(`❌ Don't press the ${name}! Press a color button!`);
         return;
       }
 
-      // The correct action was to press a specific color
+      // avoidColor: pressing the special button is fine only if it's not the forbidden color — but it IS a special, not a color, so it's wrong
+      if (currentTask.target === "avoidColor") {
+        loseLife("❌ Wrong action! You should have waited!");
+        return;
+      }
+
+      // The correct action was to press — check if it's a trick
       if (!currentTask.says) {
         loseLife("❌ Simon didn't say it!");
         return;
+      }
+
+      // The task must be "special" for pressing the special button to be correct
+      if (currentTask.target !== "special") {
+        loseLife("❌ Wrong button!");
+        return;
+      }
+
+      clickCount++;
+      message.textContent =
+        `${name.toUpperCase()}! ${clickCount} / ${currentTask.count}`;
+
+      if (clickCount === currentTask.count) {
+        completeRound();
       }
     }
 
