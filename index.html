@@ -668,25 +668,82 @@
       gameOverOverlay.classList.add("visible");
     }
 
-    function stopGame() {
-      if (finished) return;
+    let paused = false;
+    let pausedTimeLeft = 0;
 
-      gameId++;
+    function stopGame() {
+      if (finished || paused) return;
+
+      paused = true;
+      pausedTimeLeft = timeLeft;
       stopTimer();
       acceptingInput = false;
-      finished = true;
 
       colorButtons.forEach(button => button.disabled = true);
       carButton.disabled = true;
-      stopButton.disabled = true;
 
-      message.textContent = "⏹️ Game stopped! Press Start Game to play again.";
-      label.textContent = "Stopped";
-      timerText.textContent = "Game stopped";
-      timerBar.style.width = "0%";
-
-      startButton.textContent = "Start Game";
+      stopButton.textContent = "Resume";
+      message.textContent = "⏸️ Game paused. Press Resume to continue.";
+      label.textContent = "Paused";
+      timerText.textContent = "Paused";
       saveState();
+    }
+
+    function resumeGame() {
+      if (finished || !paused) return;
+
+      paused = false;
+      acceptingInput = true;
+
+      colorButtons.forEach(button => button.disabled = false);
+      carButton.disabled = false;
+
+      stopButton.textContent = "Stop";
+      message.textContent = currentTask ? currentTask.text : "";
+      label.textContent = `Level ${currentTheme + 1}`;
+
+      startResumedTimer(gameId, pausedTimeLeft);
+    }
+
+    function startResumedTimer(id, remaining) {
+      stopTimer();
+
+      const startedAt = Date.now();
+      timeLeft = remaining;
+
+      timerBar.style.width = `${(timeLeft / TIME_LIMIT) * 100}%`;
+      timerBar.style.backgroundColor = timeLeft <= 2 ? "#ef4444" : "#22c55e";
+      timerText.textContent = `Time: ${timeLeft.toFixed(1)} seconds`;
+
+      timerInterval = setInterval(() => {
+        if (id !== gameId || !acceptingInput || paused) {
+          stopTimer();
+          return;
+        }
+
+        const elapsed = (Date.now() - startedAt) / 1000;
+        timeLeft = Math.max(0, remaining - elapsed);
+
+        timerBar.style.width =
+          `${(timeLeft / TIME_LIMIT) * 100}%`;
+
+        timerText.textContent =
+          `Time: ${timeLeft.toFixed(1)} seconds`;
+
+        if (timeLeft <= 2) {
+          timerBar.style.backgroundColor = "#ef4444";
+        }
+
+        if (timeLeft <= 0) {
+          stopTimer();
+
+          if (shouldWait()) {
+            completeRound();
+          } else {
+            loseLife("⏰ Time's up! You should have pressed something!");
+          }
+        }
+      }, 50);
     }
 
     // Game settings
@@ -982,6 +1039,8 @@
 
       startButton.textContent = "Restart Game";
       stopButton.disabled = false;
+      stopButton.textContent = "Stop";
+      paused = false;
 
       isNewBest = false;
       hideGameOverPanel();
@@ -1184,6 +1243,7 @@
 
       startButton.textContent = "Play Again";
       stopButton.disabled = true;
+      stopButton.textContent = "Stop";
       gameOverReason.textContent = text;
       showGameOverPanel();
       saveState();
@@ -1198,7 +1258,10 @@
 
     carButton.addEventListener("click", handleCarClick);
     startButton.addEventListener("click", startGame);
-    stopButton.addEventListener("click", stopGame);
+    stopButton.addEventListener("click", () => {
+      if (paused) resumeGame();
+      else stopGame();
+    });
     document.getElementById("playAgain").addEventListener("click", startGame);
 
     // Restore an in-progress game on page load
