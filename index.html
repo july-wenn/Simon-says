@@ -819,8 +819,9 @@
 
     // Returns true if the correct action is to NOT press anything (just wait)
     function shouldWait() {
-      // "Don't press" instructions always mean don't press, trick or not.
-      // The trick only applies to "Press X" instructions.
+      // Trick "press" instructions (Simon didn't say it) → don't press
+      if (!currentTask.says) return true;
+      // "Don't press" instructions always mean don't press
       return currentTask.target !== "color" && currentTask.target !== "pressAnyColor";
     }
 
