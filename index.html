@@ -322,6 +322,34 @@
       background: var(--main-btn-hover);
     }
 
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .stop-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .stop-btn:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    .stop-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     .hint {
       color: var(--hint);
       font-size: 0.85rem;
@@ -517,9 +545,14 @@
       Car
     </button>
 
-    <button class="main-btn" id="start">
-      Start Game
-    </button>
+    <div class="btn-row">
+      <button class="main-btn" id="start">
+        Start Game
+      </button>
+      <button class="stop-btn" id="stop" disabled>
+        Stop Game
+      </button>
+    </div>
 
     <div class="game-over-overlay" id="gameOverOverlay">
       <div class="game-over-panel" id="gameOverPanel">
@@ -589,6 +622,7 @@
     const colorButtons = document.querySelectorAll(".color");
     const carButton = document.getElementById("car");
     const startButton = document.getElementById("start");
+    const stopButton = document.getElementById("stop");
     const gameOverOverlay = document.getElementById("gameOverOverlay");
     const gameOverReason = document.getElementById("gameOverReason");
     const reviewRound = document.getElementById("reviewRound");
@@ -611,6 +645,27 @@
         newBestBadge.classList.add("visible");
       }
       gameOverOverlay.classList.add("visible");
+    }
+
+    function stopGame() {
+      if (finished) return;
+
+      gameId++;
+      stopTimer();
+      acceptingInput = false;
+      finished = true;
+
+      colorButtons.forEach(button => button.disabled = true);
+      carButton.disabled = true;
+      stopButton.disabled = true;
+
+      message.textContent = "⏹️ Game stopped! Press Start Game to play again.";
+      label.textContent = "Stopped";
+      timerText.textContent = "Game stopped";
+      timerBar.style.width = "0%";
+
+      startButton.textContent = "Start Game";
+      saveState();
     }
 
     // Game settings
@@ -905,6 +960,7 @@
       updateLivesDisplay();
 
       startButton.textContent = "Restart Game";
+      stopButton.disabled = false;
 
       isNewBest = false;
       hideGameOverPanel();
@@ -1106,6 +1162,7 @@
       timerBar.style.width = "0%";
 
       startButton.textContent = "Play Again";
+      stopButton.disabled = true;
       gameOverReason.textContent = text;
       showGameOverPanel();
       saveState();
@@ -1120,6 +1177,7 @@
 
     carButton.addEventListener("click", handleCarClick);
     startButton.addEventListener("click", startGame);
+    stopButton.addEventListener("click", stopGame);
 
     // Restore an in-progress game on page load
     if (!finished && lives > 0) {
