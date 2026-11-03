@@ -11,6 +11,54 @@
       box-sizing: border-box;
     }
 
+    :root {
+      --bg: #101321;
+      --text: #ffffff;
+      --subtitle: #a5acc7;
+      --stat-bg: #20253b;
+      --stat-label: #a5acc7;
+      --instruction-border: #454d70;
+      --instruction-bg: #20253b;
+      --instruction-label: #a5acc7;
+      --timer-bg: #303650;
+      --timer-text: #c4c9e0;
+      --color-border: #ffffff35;
+      --car-border: #454d70;
+      --car-bg: #252b43;
+      --car-text: #ffffff;
+      --hint: #858eaf;
+      --main-btn: #8b5cf6;
+      --main-btn-hover: #7c3aed;
+      --main-btn-text: #ffffff;
+      --theme-btn-bg: #20253b;
+      --theme-btn-text: #ffffff;
+      --theme-btn-border: #454d70;
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f4f5fa;
+      --text: #1a1d2e;
+      --subtitle: #5b6275;
+      --stat-bg: #e2e4f0;
+      --stat-label: #5b6275;
+      --instruction-border: #c5c9dd;
+      --instruction-bg: #e2e4f0;
+      --instruction-label: #5b6275;
+      --timer-bg: #c5c9dd;
+      --timer-text: #3a3f55;
+      --color-border: #00000025;
+      --car-border: #c5c9dd;
+      --car-bg: #d3d6e8;
+      --car-text: #1a1d2e;
+      --hint: #7a8198;
+      --main-btn: #7c3aed;
+      --main-btn-hover: #6d28d9;
+      --main-btn-text: #ffffff;
+      --theme-btn-bg: #e2e4f0;
+      --theme-btn-text: #1a1d2e;
+      --theme-btn-border: #c5c9dd;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -18,9 +66,42 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #101321;
-      color: white;
+      background: var(--bg);
+      color: var(--text);
       font-family: Arial, sans-serif;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border: 2px solid var(--theme-btn-border);
+      border-radius: 10px;
+      background: var(--theme-btn-bg);
+      color: var(--theme-btn-text);
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      transition: transform 0.15s, background 0.2s, border-color 0.2s;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.05);
+    }
+
+    .theme-toggle:active {
+      transform: scale(0.95);
+    }
+
+    .theme-toggle .theme-icon {
+      font-size: 1.1rem;
     }
 
     .game {
@@ -35,7 +116,7 @@
     }
 
     .subtitle {
-      color: #a5acc7;
+      color: var(--subtitle);
       margin-bottom: 24px;
     }
 
@@ -49,11 +130,12 @@
       flex: 1;
       padding: 12px 6px;
       border-radius: 12px;
-      background: #20253b;
+      background: var(--stat-bg);
+      transition: background 0.3s;
     }
 
     .stat p {
-      color: #a5acc7;
+      color: var(--stat-label);
       font-size: 11px;
       margin: 0 0 8px;
     }
@@ -82,9 +164,10 @@
       min-height: 120px;
       padding: 20px 12px;
       margin-bottom: 18px;
-      border: 2px solid #454d70;
+      border: 2px solid var(--instruction-border);
       border-radius: 18px;
-      background: #20253b;
+      background: var(--instruction-bg);
+      transition: background 0.3s, border-color 0.3s;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -92,7 +175,7 @@
     }
 
     .instruction small {
-      color: #a5acc7;
+      color: var(--instruction-label);
       text-transform: uppercase;
       letter-spacing: 2px;
     }
@@ -105,7 +188,7 @@
 
     .timer-container {
       height: 12px;
-      background: #303650;
+      background: var(--timer-bg);
       border-radius: 20px;
       overflow: hidden;
       margin-bottom: 8px;
@@ -120,7 +203,7 @@
 
     #timerText {
       margin-bottom: 18px;
-      color: #c4c9e0;
+      color: var(--timer-text);
       font-weight: bold;
     }
 
@@ -136,7 +219,7 @@
       width: 100%;
       max-width: 180px;
       height: 120px;
-      border: 3px solid #ffffff35;
+      border: 3px solid var(--color-border);
       color: white;
       font-size: 1rem;
       font-weight: bold;
@@ -203,10 +286,11 @@
       width: 100%;
       padding: 14px;
       margin-bottom: 14px;
-      border: 2px solid #454d70;
+      border: 2px solid var(--car-border);
       border-radius: 16px;
-      background: #252b43;
-      color: white;
+      background: var(--car-bg);
+      color: var(--car-text);
+      transition: background 0.3s, border-color 0.3s;
       font-size: 1rem;
       cursor: pointer;
     }
@@ -223,19 +307,19 @@
       margin-top: 5px;
       border: none;
       border-radius: 12px;
-      background: #8b5cf6;
-      color: white;
+      background: var(--main-btn);
+      color: var(--main-btn-text);
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
     }
 
     .main-btn:hover:not(:disabled) {
-      background: #7c3aed;
+      background: var(--main-btn-hover);
     }
 
     .hint {
-      color: #858eaf;
+      color: var(--hint);
       font-size: 0.85rem;
       line-height: 1.5;
       margin-top: 18px;
@@ -258,6 +342,10 @@
 </head>
 
 <body>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark and light mode">
+    <span class="theme-icon" id="themeIcon">🌙</span>
+    <span id="themeLabel">Dark</span>
+  </button>
   <main class="game">
     <h1>🎮 Simon Says</h1>
     <p class="subtitle">
@@ -335,6 +423,32 @@
   </main>
 
   <script>
+    // Theme toggle
+    const themeToggle = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
+    const themeLabel = document.getElementById("themeLabel");
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      if (theme === "light") {
+        themeIcon.textContent = "☀️";
+        themeLabel.textContent = "Light";
+      } else {
+        themeIcon.textContent = "🌙";
+        themeLabel.textContent = "Dark";
+      }
+      try { localStorage.setItem("simonTheme", theme); } catch (e) {}
+    }
+
+    let savedTheme = "dark";
+    try { savedTheme = localStorage.getItem("simonTheme") || "dark"; } catch (e) {}
+    applyTheme(savedTheme);
+
+    themeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+
     // HTML elements
     const message = document.getElementById("message");
     const label = document.getElementById("label");
