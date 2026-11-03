@@ -459,6 +459,24 @@
       50%      { transform: scale(1.08); }
     }
 
+    .play-again-btn {
+      width: 100%;
+      padding: 15px;
+      margin-top: 4px;
+      border: none;
+      border-radius: 12px;
+      background: var(--main-btn);
+      color: var(--main-btn-text);
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .play-again-btn:hover:not(:disabled) {
+      background: var(--main-btn-hover);
+    }
+
     @media (max-width: 360px) {
       h1 {
         font-size: 2rem;
@@ -572,6 +590,9 @@
           </span>
           <strong id="reviewBest">0</strong>
         </div>
+        <button class="play-again-btn" id="playAgain">
+          Play Again
+        </button>
       </div>
     </div>
 
@@ -1178,6 +1199,7 @@
     carButton.addEventListener("click", handleCarClick);
     startButton.addEventListener("click", startGame);
     stopButton.addEventListener("click", stopGame);
+    document.getElementById("playAgain").addEventListener("click", startGame);
 
     // Restore an in-progress game on page load
     if (!finished && lives > 0) {
